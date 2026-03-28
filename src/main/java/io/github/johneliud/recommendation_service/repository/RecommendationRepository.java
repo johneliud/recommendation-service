@@ -48,4 +48,36 @@ public class RecommendationRepository {
                 .mappedBy((typeSystem, record) -> mapRecord(record))
                 .all();
     }
+
+    /**
+     * Content-based filtering: find movies sharing genres with movies the
+     * current user rated ≥ 4, excluding already-rated movies.
+     */
+    public Collection<RecommendationResponse> findContentBased(String userId) {
+        String query = """
+                MATCH (myRating:Rating {userId: $userId})
+                WHERE myRating.score >= 4
+                WITH COLLECT(myRating.movieId) AS myMovies
+                MATCH (rated:Movie)
+                WHERE rated.id IN myMovies
+                WITH COLLECT(DISTINCT rated.genres) AS allGenreLists, myMovies
+                UNWIND allGenreLists AS genreList
+                UNWIND genreList AS genre
+                WITH COLLECT(DISTINCT genre) AS likedGenres, myMovies
+                MATCH (m:Movie)
+                WHERE ANY(g IN m.genres WHERE g IN likedGenres)
+                  AND NOT m.id IN myMovies
+                RETURN m.id AS id, m.title AS title, m.genres AS genres,
+                       m.releaseYear AS releaseYear, m.description AS description,
+                       m.posterUrl AS posterUrl, m.averageRating AS averageRating,
+                       SIZE([g IN m.genres WHERE g IN likedGenres]) AS relevance
+                ORDER BY relevance DESC
+                """;
+
+        return neo4jClient.query(query)
+                .bind(userId).to("userId")
+                .fetchAs(RecommendationResponse.class)
+                .mappedBy((typeSystem, record) -> mapRecord(record))
+                .all();
+    }
 }
