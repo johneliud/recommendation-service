@@ -80,4 +80,26 @@ public class RecommendationRepository {
                 .mappedBy((typeSystem, record) -> mapRecord(record))
                 .all();
     }
+
+    private RecommendationResponse mapRecord(org.neo4j.driver.Record record) {
+        Value genres = record.get("genres");
+        List<String> genreList = genres.isNull()
+                ? List.of()
+                : genres.asList(Value::asString);
+
+        Value avgRating = record.get("averageRating");
+        Value description = record.get("description");
+        Value posterUrl = record.get("posterUrl");
+
+        return new RecommendationResponse(
+                record.get("id").asString(),
+                record.get("title").asString(),
+                genreList,
+                record.get("releaseYear").asInt(),
+                description.isNull() ? null : description.asString(),
+                posterUrl.isNull() ? null : posterUrl.asString(),
+                avgRating.isNull() ? null : avgRating.asDouble(),
+                record.get("relevance").asLong()
+        );
+    }
 }
