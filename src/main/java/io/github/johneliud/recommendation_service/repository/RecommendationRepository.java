@@ -87,6 +87,7 @@ public class RecommendationRepository {
                 ? List.of()
                 : genres.asList(Value::asString);
 
+        Value releaseYear = record.get("releaseYear");
         Value avgRating = record.get("averageRating");
         Value description = record.get("description");
         Value posterUrl = record.get("posterUrl");
@@ -95,7 +96,7 @@ public class RecommendationRepository {
                 record.get("id").asString(),
                 record.get("title").asString(),
                 genreList,
-                record.get("releaseYear").asInt(),
+                releaseYear.isNull() ? null : releaseYear.asInt(),
                 description.isNull() ? null : description.asString(),
                 posterUrl.isNull() ? null : posterUrl.asString(),
                 avgRating.isNull() ? null : avgRating.asDouble(),
